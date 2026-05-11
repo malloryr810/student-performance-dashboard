@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Performance Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f9fafb;
+      --border: #e5e7eb;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --accent: #2563eb;
+      --best-bar: #2563eb;
+      --other-bar: #bfdbfe;
+      --baseline-color: #f59e0b;
+      --caste-color: #16a34a;
+      --academic-color: #2563eb;
+      --other-color: #9ca3af;
+      --radius: 8px;
+      --radius-sm: 3px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    /* ── Header ── */
+    .site-header { margin-bottom: 36px; }
+    .site-header h1 {
+      font-size: clamp(1.25rem, 4vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    .site-header p {
+      margin-top: 5px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── Metric Cards ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 600px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 16px 14px;
+    }
+    .card-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .card-value.blue { color: var(--accent); }
+    .card-label {
+      margin-top: 6px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+    }
+    .card-sub {
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      padding: 9px 18px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ── Panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Chart Card ── */
+    .chart-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .card-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .card-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+      margin-bottom: 20px;
+    }
+    .chart-wrap { position: relative; }
+    .h220 { height: 220px; }
+    .h370 { height: 370px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .dash-line {
+      width: 18px;
+      height: 0;
+      border-top: 2px dashed var(--baseline-color);
+    }
+
+    /* ── Confusion Matrix ── */
+    .matrix-outer { overflow-x: auto; }
+    .matrix-layout {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 360px;
+    }
+    .axis-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .matrix-main { flex: 1; }
+    .pred-label {
+      text-align: center;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .matrix-table {
+      border-collapse: separate;
+      border-spacing: 4px;
+      width: 100%;
+    }
+    .matrix-table th {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      text-align: center;
+    }
+    .matrix-table th.row-lbl {
+      text-align: right;
+      white-space: nowrap;
+      padding-right: 10px;
+    }
+    .matrix-table td {
+      height: 52px;
+      min-width: 58px;
+      text-align: center;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: default;
+      transition: opacity 0.1s;
+    }
+    .matrix-table td:hover { opacity: 0.82; }
+
+    .matrix-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .mf-item { font-size: 0.8125rem; }
+    .mf-item .lbl { color: var(--text-secondary); }
+    .mf-item .val { font-weight: 600; }
+
+    /* ── State ── */
+    .error-msg {
+      padding: 20px 22px;
+      border: 1px solid #fca5a5;
+      background: #fef2f2;
+      border-radius: var(--radius);
+      color: #991b1b;
+      font-size: 0.875rem;
+      line-height: 1.65;
+    }
+    .error-msg code {
+      font-family: ui-monospace, monospace;
+      font-size: 0.8125rem;
+      background: #fee2e2;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .loading-msg {
+      padding: 52px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="site-header">
+    <h1>Student Performance Dashboard</h1>
+    <p>CEE exam outcome classification &middot; Machine learning model evaluation</p>
+  </header>
+
+  <div id="loading-state" class="loading-msg">Loading dashboard data&hellip;</div>
+  <div id="error-state" class="error-msg hidden"></div>
+
+  <div id="dashboard" class="hidden">
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="models">Model Comparison</button>
+      <button class="tab-btn" data-tab="matrix">Confusion Matrix</button>
+      <button class="tab-btn" data-tab="features">Feature Importance</button>
+    </div>
+
+    <div id="panel-models" class="panel active">
+      <div class="chart-card">
+        <div class="card-title">Model Accuracy Comparison</div>
+        <div class="card-desc">Accuracy on held-out test set &middot; 134 samples &middot; 80/20 stratified split</div>
+        <div class="chart-wrap h220">
+          <canvas id="model-chart"></canvas>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="swatch" style="background:var(--best-bar)"></div>
+            <span>Best model</span>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background:var(--other-bar)"></div>
+            <span>Other models</span>
+          </div>
+          <div class="legend-item">
+            <div class="dash-line"></div>
+            <span>Chance baseline (25%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-matrix" class="panel">
+      <div class="chart-card">
+        <div class="card-title">Confusion Matrix &mdash; Random Forest</div>
+        <div class="card-desc">Rows = actual class &middot; Columns = predicted class &middot; Diagonal = correct &middot; &ldquo;Vg&rdquo; = Very Good</div>
+        <div id="matrix-container"></div>
+      </div>
+    </div>
+
+    <div id="panel-features" class="panel">
+      <div class="chart-card">
+        <div class="card-title">Top 10 Feature Importances</div>
+        <div class="card-desc">Random Forest Gini importance &middot; one-hot encoded features grouped by original category</div>
+        <div class="chart-wrap h370">
+          <canvas id="feature-chart"></canvas>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="swatch" style="background:var(--caste-color)"></div>
+            <span>Caste / social</span>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background:var(--academic-color)"></div>
+            <span>Academic history</span>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background:var(--other-color)"></div>
+            <span>Other factors</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pct  = v => (v * 100).toFixed(1) + '%';
+
+const toTitle = s =>
+  s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
+function featureName(raw) {
+  const map = {
+    time_encoded:                    'Study Time',
+    Class_XII_Percentage_Encoded:    'Class XII %',
+    Class_X_Percentage_Encoded:      'Class X %',
+    Gender_male:                     'Gender: Male',
+    Gender_female:                   'Gender: Female',
+    medium_ENGLISH:                  'Medium: English',
+    medium_ASSAMESE:                 'Medium: Assamese',
+    medium_OTHERS:                   'Medium: Other',
+    coaching_WA:                     'Coaching: With All',
+    coaching_NO:                     'Coaching: None',
+    coaching_OA:                     'Coaching: Online',
+  };
+  if (map[raw]) return map[raw];
+  if (raw.startsWith('Caste_'))               return 'Caste: '           + toTitle(raw.slice(6));
+  if (raw.startsWith('Father_occupation_'))   return 'Father: '          + toTitle(raw.slice(18));
+  if (raw.startsWith('Mother_occupation_'))   return 'Mother: '          + toTitle(raw.slice(18));
+  if (raw.startsWith('Class_ten_education_')) return 'Class X Board: '   + raw.slice(20);
+  if (raw.startsWith('twelve_education_'))    return 'Class XII Board: ' + raw.slice(17);
+  return raw.replace(/_/g, ' ');
+}
+
+function featureCat(raw) {
+  if (raw.startsWith('Caste_')) return 'caste';
+  if (
+    raw.startsWith('Class_X') ||
+    raw.startsWith('twelve_education_') ||
+    raw.startsWith('Class_ten_education_')
+  ) return 'academic';
+  return 'other';
+}
+
+// ─── Metric Cards ─────────────────────────────────────────────────────────────
+
+function renderMetrics(d) {
+  const best = [...d.model_results].sort((a, b) => b.accuracy - a.accuracy)[0];
+  document.getElementById('metrics').innerHTML = `
+    <div class="card">
+      <div class="card-value blue">${pct(best.accuracy)}</div>
+      <div class="card-label">Best Accuracy</div>
+    </div>
+    <div class="card">
+      <div class="card-value" style="font-size:1.25rem;letter-spacing:-0.015em">${best.model}</div>
+      <div class="card-label">Best Model</div>
+    </div>
+    <div class="card">
+      <div class="card-value">${pct(d.dataset_info.baseline_accuracy)}</div>
+      <div class="card-label">Chance Baseline</div>
+      <div class="card-sub">4-class random</div>
+    </div>
+    <div class="card">
+      <div class="card-value">${d.dataset_info.test_size}</div>
+      <div class="card-label">Test Samples</div>
+      <div class="card-sub">${d.dataset_info.split_ratio}</div>
+    </div>
+  `;
+}
+
+// ─── Model Chart ──────────────────────────────────────────────────────────────
+
+let modelChart = null;
+
+function renderModelChart(d) {
+  if (modelChart) return;
+
+  const sorted  = [...d.model_results].sort((a, b) => a.accuracy - b.accuracy);
+  const bestAcc = Math.max(...d.model_results.map(m => m.accuracy));
+
+  const baselinePlugin = {
+    id: 'baselineLine',
+    afterDraw(chart) {
+      const { ctx, scales } = chart;
+      if (!scales.x) return;
+      const x = scales.x.getPixelForValue(d.dataset_info.baseline_accuracy);
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, scales.y.top);
+      ctx.lineTo(x, scales.y.bottom);
+      ctx.strokeStyle = cssv('--baseline-color');
+      ctx.lineWidth = 1.75;
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  modelChart = new Chart(
+    document.getElementById('model-chart').getContext('2d'),
+    {
+      type: 'bar',
+      plugins: [baselinePlugin],
+      data: {
+        labels: sorted.map(m => m.model),
+        datasets: [{
+          data: sorted.map(m => m.accuracy),
+          backgroundColor: sorted.map(m =>
+            m.accuracy === bestAcc ? cssv('--best-bar') : cssv('--other-bar')
+          ),
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            callbacks: { label: c => '  ' + pct(c.raw) }
+          }
+        },
+        scales: {
+          x: {
+            min: 0,
+            max: 0.70,
+            grid: { color: cssv('--border') },
+            border: { color: cssv('--border') },
+            ticks: {
+              color: cssv('--text-muted'),
+              font: { size: 11 },
+              callback: v => (v * 100).toFixed(0) + '%'
+            }
+          },
+          y: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: cssv('--text-secondary'), font: { size: 12 } }
+          }
+        }
+      }
+    }
+  );
+}
+
+// ─── Confusion Matrix ─────────────────────────────────────────────────────────
+
+function renderMatrix(d) {
+  const container = document.getElementById('matrix-container');
+  if (container.dataset.done) return;
+  container.dataset.done = '1';
+
+  const { labels, matrix } = d.confusion_matrix;
+  const flat = matrix.flat();
+  const maxV = Math.max(...flat);
+
+  function cellBg(val, isDiag) {
+    if (val === 0) return '#ffffff';
+    const t = val / maxV;
+    const lerp = (a, b) => Math.round(a + t * (b - a));
+    return isDiag
+      ? `rgb(${lerp(255, 37)},${lerp(255, 99)},${lerp(255, 235)})`   // white → blue
+      : `rgb(${lerp(255, 220)},${lerp(255, 38)},${lerp(255, 38)})`;  // white → red
+  }
+  const cellFg = val => (val / maxV) > 0.42 ? '#fff' : '#111827';
+
+  const headerCells = labels.map(l => `<th>${l}</th>`).join('');
+  const bodyRows = matrix.map((row, ri) =>
+    `<tr>
+      <th class="row-lbl">${labels[ri]}</th>
+      ${row.map((val, ci) => {
+        const isDiag = ri === ci;
+        return `<td
+          style="background:${cellBg(val, isDiag)};color:${cellFg(val)}"
+          title="Actual: ${labels[ri]} → Predicted: ${labels[ci]} (${val})"
+        >${val}</td>`;
+      }).join('')}
+    </tr>`
+  ).join('');
+
+  const correct  = matrix.reduce((s, row, i) => s + row[i], 0);
+  const total    = flat.reduce((s, v) => s + v, 0);
+
+  const classStats = labels.map((lbl, i) => {
+    const rowSum = matrix[i].reduce((s, v) => s + v, 0);
+    const recall = rowSum ? (matrix[i][i] / rowSum * 100).toFixed(0) + '%' : '–';
+    return `<div class="mf-item"><span class="lbl">${lbl}: </span><span class="val">${recall} recall</span></div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="matrix-outer">
+      <div class="matrix-layout">
+        <div class="axis-label">← Actual →</div>
+        <div class="matrix-main">
+          <div class="pred-label">← Predicted →</div>
+          <table class="matrix-table">
+            <thead><tr><th></th>${headerCells}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="matrix-footer">
+      ${classStats}
+      <div class="mf-item">
+        <span class="lbl">Overall: </span>
+        <span class="val">${(correct / total * 100).toFixed(1)}%</span>
+      </div>
+    </div>
+    <div class="legend" style="margin-top:12px">
+      <div class="legend-item">
+        <div class="swatch" style="background:#2563eb"></div>
+        <span>Correct — darker = more</span>
+      </div>
+      <div class="legend-item">
+        <div class="swatch" style="background:#dc2626"></div>
+        <span>Error — darker = more</span>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Feature Chart ────────────────────────────────────────────────────────────
+
+let featureChart = null;
+
+function renderFeatureChart(d) {
+  if (featureChart) return;
+
+  const top10 = [...d.feature_importance]
+    .sort((a, b) => b.importance - a.importance)
+    .slice(0, 10)
+    .reverse();  // ascending so top feature appears at chart top
+
+  featureChart = new Chart(
+    document.getElementById('feature-chart').getContext('2d'),
+    {
+      type: 'bar',
+      data: {
+        labels: top10.map(f => featureName(f.feature)),
+        datasets: [{
+          data: top10.map(f => f.importance),
+          backgroundColor: top10.map(f => {
+            const cat = featureCat(f.feature);
+            return cat === 'caste'    ? cssv('--caste-color')
+                 : cat === 'academic' ? cssv('--academic-color')
+                 :                     cssv('--other-color');
+          }),
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            callbacks: { label: c => '  Importance: ' + c.raw.toFixed(4) }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: cssv('--border') },
+            border: { color: cssv('--border') },
+            ticks: {
+              color: cssv('--text-muted'),
+              font: { size: 11 },
+              callback: v => v.toFixed(2)
+            }
+          },
+          y: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: cssv('--text-secondary'), font: { size: 11.5 } }
+          }
+        }
+      }
+    }
+  );
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+function initTabs(d) {
+  const panels = {
+    models:   document.getElementById('panel-models'),
+    matrix:   document.getElementById('panel-matrix'),
+    features: document.getElementById('panel-features'),
+  };
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      Object.entries(panels).forEach(([k, el]) => el.classList.toggle('active', k === t));
+      if (t === 'matrix')   renderMatrix(d);
+      if (t === 'features') renderFeatureChart(d);
+    });
+  });
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
+
+async function init() {
+  try {
+    const res = await fetch('./dashboard_data.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    const data = await res.json();
+
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+
+    renderMetrics(data);
+    initTabs(data);
+    renderModelChart(data);
+  } catch (err) {
+    document.getElementById('loading-state').classList.add('hidden');
+    const el = document.getElementById('error-state');
+    el.classList.remove('hidden');
+    el.innerHTML =
+      `<strong>Could not load dashboard_data.json</strong> &mdash; ${err.message}<br><br>` +
+      `Browsers block <code>fetch()</code> on <code>file://</code> URLs. ` +
+      `Serve the folder with a local server instead:<br><br>` +
+      `<code>python3 -m http.server 8080</code> &nbsp;&rarr;&nbsp; open <code>http://localhost:8080</code>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
