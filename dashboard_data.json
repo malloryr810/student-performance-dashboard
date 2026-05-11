@@ -1,0 +1,228 @@
+{
+  "dataset_info": {
+    "total_records": 666,
+    "train_size": 532,
+    "test_size": 134,
+    "num_classes": 4,
+    "class_labels": [
+      "Average",
+      "Excellent",
+      "Good",
+      "Vg"
+    ],
+    "class_distribution": {
+      "Good": 210,
+      "Vg": 198,
+      "Average": 157,
+      "Excellent": 101
+    },
+    "baseline_accuracy": 0.25,
+    "split_ratio": "80/20 stratified"
+  },
+  "model_results": [
+    {
+      "model": "Random Forest",
+      "accuracy": 0.5746
+    },
+    {
+      "model": "KNN",
+      "accuracy": 0.5597
+    },
+    {
+      "model": "Logistic Regression",
+      "accuracy": 0.5672
+    },
+    {
+      "model": "Gradient Boosting",
+      "accuracy": 0.5075
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "Caste_ST",
+      "importance": 0.1087
+    },
+    {
+      "feature": "time_encoded",
+      "importance": 0.0783
+    },
+    {
+      "feature": "Caste_General",
+      "importance": 0.0715
+    },
+    {
+      "feature": "Class_XII_Percentage_Encoded",
+      "importance": 0.0641
+    },
+    {
+      "feature": "Class_X_Percentage_Encoded",
+      "importance": 0.0452
+    },
+    {
+      "feature": "Father_occupation_OTHERS",
+      "importance": 0.0374
+    },
+    {
+      "feature": "Mother_occupation_HOUSE_WIFE",
+      "importance": 0.0358
+    },
+    {
+      "feature": "Caste_OBC",
+      "importance": 0.0343
+    },
+    {
+      "feature": "Gender_male",
+      "importance": 0.0343
+    },
+    {
+      "feature": "coaching_WA",
+      "importance": 0.0328
+    },
+    {
+      "feature": "Gender_female",
+      "importance": 0.0326
+    },
+    {
+      "feature": "Father_occupation_BUSINESS",
+      "importance": 0.0321
+    },
+    {
+      "feature": "Mother_occupation_SCHOOL_TEACHER",
+      "importance": 0.0282
+    },
+    {
+      "feature": "Father_occupation_SCHOOL_TEACHER",
+      "importance": 0.0281
+    },
+    {
+      "feature": "Class_ten_education_CBSE",
+      "importance": 0.0246
+    },
+    {
+      "feature": "coaching_NO",
+      "importance": 0.024
+    },
+    {
+      "feature": "coaching_OA",
+      "importance": 0.0226
+    },
+    {
+      "feature": "Class_ten_education_SEBA",
+      "importance": 0.0218
+    },
+    {
+      "feature": "Mother_occupation_OTHERS",
+      "importance": 0.0216
+    },
+    {
+      "feature": "twelve_education_CBSE",
+      "importance": 0.0209
+    },
+    {
+      "feature": "twelve_education_AHSEC",
+      "importance": 0.0206
+    },
+    {
+      "feature": "Caste_SC",
+      "importance": 0.0202
+    },
+    {
+      "feature": "Father_occupation_ENGINEER",
+      "importance": 0.0199
+    },
+    {
+      "feature": "Father_occupation_DOCTOR",
+      "importance": 0.019
+    },
+    {
+      "feature": "medium_ENGLISH",
+      "importance": 0.0179
+    },
+    {
+      "feature": "medium_OTHERS",
+      "importance": 0.0177
+    },
+    {
+      "feature": "medium_ASSAMESE",
+      "importance": 0.0165
+    },
+    {
+      "feature": "Father_occupation_COLLEGE_TEACHER",
+      "importance": 0.0151
+    },
+    {
+      "feature": "Mother_occupation_COLLEGE_TEACHER",
+      "importance": 0.0105
+    },
+    {
+      "feature": "Father_occupation_BANK_OFFICIAL",
+      "importance": 0.0102
+    },
+    {
+      "feature": "Class_ten_education_OTHERS",
+      "importance": 0.0094
+    },
+    {
+      "feature": "Father_occupation_CULTIVATOR",
+      "importance": 0.0083
+    },
+    {
+      "feature": "Mother_occupation_DOCTOR",
+      "importance": 0.0072
+    },
+    {
+      "feature": "twelve_education_OTHERS",
+      "importance": 0.0028
+    },
+    {
+      "feature": "Mother_occupation_BANK_OFFICIAL",
+      "importance": 0.002
+    },
+    {
+      "feature": "Mother_occupation_ENGINEER",
+      "importance": 0.002
+    },
+    {
+      "feature": "Mother_occupation_BUSINESS",
+      "importance": 0.0012
+    },
+    {
+      "feature": "Mother_occupation_CULTIVATOR",
+      "importance": 0.0004
+    }
+  ],
+  "confusion_matrix": {
+    "labels": [
+      "Average",
+      "Excellent",
+      "Good",
+      "Vg"
+    ],
+    "matrix": [
+      [
+        26,
+        0,
+        5,
+        1
+      ],
+      [
+        0,
+        7,
+        3,
+        10
+      ],
+      [
+        5,
+        5,
+        25,
+        7
+      ],
+      [
+        6,
+        4,
+        11,
+        19
+      ]
+    ]
+  }
+}
